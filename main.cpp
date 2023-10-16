@@ -39,6 +39,7 @@ void startClient(){
     start_send_object(ifs, server_addr, file_name, file_info.st_size);
 }
 
+// TODO 考虑使用异常处理
 int main() {
     // 打开windows网络库
     WSADATA winSockMsg;

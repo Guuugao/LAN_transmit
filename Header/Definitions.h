@@ -4,6 +4,7 @@
 #pragma once
 
 using std::ios;
+using std::ref;
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -32,17 +33,18 @@ enum Status{
     interrupt   = 0x10000000
 };
 
-#define FILE_NAME_LENGTH 64
+#define FILE_PATH_LENGTH 64
 // 文件信息(文件名称, 文件大小)
 struct File_info{
-    char file_name[FILE_NAME_LENGTH];
-    u_int64 file_size;
+    string file_name;   // 文件名称
+    u_int file_size;  // 文件大小
+    u_int thread_amount;// 计划使用线程数量
 };
 
 // 文件数据块信息
-struct Data_block_info{
-    u_int64 seek; // 文件偏移量
-    u_int64 size; // 数据块大小
+struct Block_info{
+    u_int seek; // 文件偏移量
+    u_int size; // 数据块大小
 };
 
 struct ACK{
