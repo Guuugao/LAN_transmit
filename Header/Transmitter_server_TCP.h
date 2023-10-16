@@ -24,7 +24,7 @@ int start_receive_object(SOCKET client_sock);
 
 
 // 传入指定地址和端口号, 作为服务器地址与监听端口
-int server_init(const char* addr, int port);
+int server_init(u_long addr, int port);
 
 // 是否正在接收文件
 bool is_receiving_object();

@@ -15,7 +15,7 @@ int end_send_object() {
 bool receive_ACK(SOCKET client_sock) {
     ACK ack = { 0 };
     ack.code = Status::accept_req;
-    if (recv(client_sock, CHAR_POINTER_CAST(ack), sizeof (ACK), 0) == SOCKET_ERROR) {
+    if (recv(client_sock, reinterpret_cast<char*>(&ack), sizeof (ACK), 0) == SOCKET_ERROR) {
         cerr << "client: receive ACK " << WSAGetLastError() << endl;
     }
     cout << "client: received ACK" << endl;
@@ -42,13 +42,13 @@ int start_send_object(ifstream& data_stream, sockaddr_in server_addr, string& f_
     }
     cout << "client: open socket" << endl;
 
-    if(connect(server_sock, SOCKADDR_CAST(server_addr), sizeof(sockaddr)) == SOCKET_ERROR) {
+    if(connect(server_sock, reinterpret_cast<sockaddr*>(&server_addr), sizeof(sockaddr)) == SOCKET_ERROR) {
         cerr << "client: connect server " << WSAGetLastError() << endl;
         return Status::error;
     }
     cout << "client: connect server" << endl;
 
-    if (send(server_sock, CHAR_POINTER_CAST(file_info), sizeof (File_info), 0) == SOCKET_ERROR) {
+    if (send(server_sock, reinterpret_cast<char*>(&file_info), sizeof (File_info), 0) == SOCKET_ERROR) {
         cerr << "client: send file information " << WSAGetLastError() << endl;
         return Status::error;
     }

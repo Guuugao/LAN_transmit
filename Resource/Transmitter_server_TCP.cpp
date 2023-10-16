@@ -17,7 +17,7 @@ void wait_request(SOCKET server_sock) {
     while (true) {
         sockaddr_in client_addr{};
         cout << "server: wait request" << endl;
-        SOCKET client_sock = accept(server_sock, SOCKADDR_CAST(client_addr), &addr_len);
+        SOCKET client_sock = accept(server_sock, reinterpret_cast<sockaddr*>(&client_addr), &addr_len);
         if (client_sock == INVALID_SOCKET) {
             cerr << "server: client_sock invalid" << endl;
             continue;
@@ -31,7 +31,7 @@ void wait_request(SOCKET server_sock) {
 bool send_ACK(SOCKET client_sock) {
     ACK ack; // TODO 先默认接受, 后面再添加用户选择的功能
     ack.code = Status::accept_req;
-    int bytes = send(client_sock, CHAR_POINTER_CAST(ack), sizeof(ACK), 0);
+    int bytes = send(client_sock, reinterpret_cast<char*>(&ack), sizeof(ACK), 0);
     if (bytes <= 0) {
         cerr << "server: send ACK " << WSAGetLastError() << endl;
     }
@@ -43,10 +43,10 @@ int start_receive_object(SOCKET client_sock) {
     char buff[BUFFER_SIZE];
     File_info file_info = { 0 }; // 文件信息包
     int bytes; // 单次接收的字节数
-    u_llong received_bytes = 0; // 记录已经接收到的文件字节数
+    u_int64 received_bytes = 0; // 记录已经接收到的文件字节数
     ofstream ofs;
 
-    if (recv(client_sock, CHAR_POINTER_CAST(file_info), sizeof (File_info), 0) == SOCKET_ERROR) {
+    if (recv(client_sock, reinterpret_cast<char*>(&file_info), sizeof (File_info), 0) == SOCKET_ERROR) {
         cerr << "server: receive file information  " << WSAGetLastError() << endl;
         return Status::error;
     }
@@ -78,12 +78,12 @@ int start_receive_object(SOCKET client_sock) {
     return Status::complete;
 }
 
-int server_init(const char *addr, int port) {
+int server_init(u_long addr, int port) {
     // 服务器地址与端口
     sockaddr_in host_addr;
     host_addr.sin_family = AF_INET;
     host_addr.sin_port = htons(port);
-    host_addr.sin_addr.S_un.S_addr = inet_addr(addr);
+    host_addr.sin_addr.S_un.S_addr = addr;
 
     SOCKET host_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (host_sock == INVALID_SOCKET) {
@@ -91,7 +91,7 @@ int server_init(const char *addr, int port) {
         return Status::error;
     }
 
-    if (bind(host_sock, SOCKADDR_CAST(host_addr), sizeof(sockaddr)) == SOCKET_ERROR) {
+    if (bind(host_sock, reinterpret_cast<sockaddr*>(&host_addr), sizeof(sockaddr)) == SOCKET_ERROR) {
         std::cerr << "bind address fail: " << WSAGetLastError() << std::endl;
         return Status::error;
     }

@@ -14,13 +14,7 @@ using std::ostream;
 using std::ifstream;
 using std::ofstream;
 
-using u_llong = unsigned long long;
-
-#define DEFAULT_SERVER_PORT (9000)
-#define DEFAULT_SERVER_ADDR "0.0.0.0"
-
-#define SOCKADDR_CAST(addr) reinterpret_cast<sockaddr*>(&addr)
-#define CHAR_POINTER_CAST(obj) reinterpret_cast<char*>(&obj)
+#define SERVER_PORT (9000)
 
 /* 数据包相关定义 */
 // 一个文件块的大小 -- 1M
@@ -42,13 +36,13 @@ enum Status{
 // 文件信息(文件名称, 文件大小)
 struct File_info{
     char file_name[FILE_NAME_LENGTH];
-    u_llong file_size;
+    u_int64 file_size;
 };
 
 // 文件数据块信息
 struct Data_block_info{
-    u_llong seek; // 文件偏移量
-    u_llong size; // 数据块大小
+    u_int64 seek; // 文件偏移量
+    u_int64 size; // 数据块大小
 };
 
 struct ACK{
