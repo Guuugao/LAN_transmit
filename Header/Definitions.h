@@ -21,8 +21,12 @@ using std::ofstream;
 // 一个文件块的大小 -- 1M
 #define BUFFER_SIZE (1024 * 1024)
 
-// 表示当前状态
+// 记录状态的变量
+static volatile int status;
+
+// 可能的状态
 enum Status{
+    leisure     = 0x00000000,   // 空闲
     sending     = 0x00000001,
     receiving   = 0x00000010,
     complete    = 0x00000100,
@@ -34,19 +38,20 @@ enum Status{
 };
 
 #define FILE_PATH_LENGTH 64
+
 // 文件信息(文件名称, 文件大小)
 struct File_info{
-    string file_name;   // 文件名称
-    u_int file_size;  // 文件大小
+    const char* file_name;   // 文件名称
+    u_int64 file_size;  // 文件大小
     u_int thread_amount;// 计划使用线程数量
 };
 
 // 文件数据块信息
 struct Block_info{
-    u_int seek; // 文件偏移量
-    u_int size; // 数据块大小
+    u_int64 seek; // 文件偏移量
+    u_int64 size; // 数据块大小
 };
 
-struct ACK{
+struct Ack{
     int code;
 };
