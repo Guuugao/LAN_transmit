@@ -20,9 +20,8 @@ int Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char 
     file_info.thread_amount = get_thread_amount();
 
     server_addr = server_ad;
-    u_int thread_amount = get_thread_amount();
-    u_int64 block_size = (file_info.file_size / thread_amount) + 1;
-    sub_thread.reserve(thread_amount);
+    u_int64 block_size = (file_info.file_size / file_info.thread_amount) + 1;
+    sub_thread.reserve(file_info.thread_amount);
 
     if (strlen(file_path) > FILE_PATH_LENGTH) {
         cerr << "client: file name too long" << endl;
@@ -47,11 +46,11 @@ int Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char 
 
     if (receive_ACK()){
         closesocket(server_sock); // 允许发送, 可以关闭先前的连接
-        for (int i = 0; i < thread_amount; ++i) {
+        for (int i = 0; i < file_info.thread_amount; ++i) {
             SOCKET sub_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
             Block_info block_info = { 0 };
             // 最后一个线程, 块大小不一定等于定义的块大小
-            block_info.size = (i == (thread_amount - 1)) ? (file_info.file_size % block_size) : block_size;
+            block_info.size = (i == (file_info.thread_amount - 1)) ? (file_info.file_size % block_size) : block_size;
             block_info.seek = block_size * i;
 
             cout << "block " << i << " size: " << block_info.size << endl;
