@@ -107,10 +107,10 @@ extern "C++" __declspec(dllexport) bool server_is_receiving()
     return server_ptr->is_receiving_object();
 }
 
-extern "C++" __declspec(dllexport) int server_start_receive()
+extern "C++" __declspec(dllexport) int server_start_receive(char* save_path)
 {
     if (server_ptr == nullptr) return -1;
-    return server_ptr->start_receive_object();
+    return server_ptr->start_receive_object(save_path);
 }
 
 extern "C++" __declspec(dllexport) void server_interrupt_receive()
