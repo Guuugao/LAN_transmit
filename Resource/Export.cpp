@@ -12,6 +12,11 @@
 
 Transmitter_client_TCP* client_ptr;
 
+extern "C++" __declspec(dllexport) bool exist_client()
+{
+    return client_ptr != nullptr;
+}
+
 extern "C++" __declspec(dllexport) bool create_client()
 {
     if (client_ptr != nullptr) return false;
@@ -35,13 +40,13 @@ extern "C++" __declspec(dllexport) bool client_is_sending()
     return client_ptr->is_sending_object();
 }
 
-extern "C++" __declspec(dllexport) void client_start_send()
+extern "C++" __declspec(dllexport) void client_interrupt_send()
 {
     if (client_ptr == nullptr) return;
     client_ptr->end_send_object();
 }
 
-extern "C++" __declspec(dllexport) int client_interrupt_send(
+extern "C++" __declspec(dllexport) int client_start_send(
         const char* file_path,
         const u_short srv_port,
         const char* srv_address)
@@ -62,6 +67,11 @@ extern "C++" __declspec(dllexport) int client_interrupt_send(
 //
 
 Transmitter_server_TCP* server_ptr;
+
+extern "C++" __declspec(dllexport) bool exist_server()
+{
+    return server_ptr != nullptr;
+}
 
 void create_server_internal(const u_short port)
 {
