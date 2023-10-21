@@ -5,8 +5,9 @@
 #ifndef LAN_TRANSMIT_TRANSMITTER_SERVER_TCP_H
 #define LAN_TRANSMIT_TRANSMITTER_SERVER_TCP_H
 
-#include <thread>
 #include <mutex>
+#include <atomic>
+#include <thread>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -17,6 +18,8 @@
 
 class Transmitter_server_TCP{
 private:
+     std::atomic<enum_state> state;
+
     // 服务器监听socket
     SOCKET server_sock;
     // 服务器监听地址&端口
@@ -40,7 +43,7 @@ public:
     void end_receive_object();
 
     // 开始接收文件
-    int start_receive_object();
+    bool start_receive_object(char* save_path);
 private:
     // 清理上次接收相关数据
     void clear_member();

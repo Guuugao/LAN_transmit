@@ -1,9 +1,9 @@
 //
 // Created by TIME LEAP MACHINE on 2023/10/13.
 //
-#include <vector>
 #include "Transmitter_client_TCP.h"
 #include "Definitions.h"
+
 bool Transmitter_client_TCP::is_sending_object() {
     return false;
 }
@@ -12,8 +12,10 @@ void Transmitter_client_TCP::end_send_object() {
 
 }
 
-int Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char *file_path) {
+bool Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char *file_path) {
+    if (state != enum_state::leisure) return false;
     clear_member();
+    state.store(enum_state::sending); // 正在发送文件
 
     file_info.file_name = get_file_name(file_path, "/\\");
     file_info.file_size = get_file_size(file_path);
@@ -23,38 +25,27 @@ int Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char 
     u_int64 block_size = (file_info.file_size / file_info.thread_amount) + 1;
     sub_thread.reserve(file_info.thread_amount);
 
-    if (strlen(file_path) > FILE_PATH_LENGTH) {
-        cerr << "client: file name too long" << endl;
-        return Status::error;
-    }
-
     server_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(server_sock == INVALID_SOCKET) {
         cerr << "client: open socket " << WSAGetLastError() << endl;
-        return Status::error;
+        return false;
     }
-    cout << "client: open socket" << endl;
 
     if(connect(server_sock, reinterpret_cast<sockaddr*>(&server_addr), sizeof(sockaddr)) == SOCKET_ERROR) {
         cerr << "client: connect server " << WSAGetLastError() << endl;
-        return Status::error;
+        return false;
     }
-    cout << "client: connect server" << endl;
 
     send_request();
-    cout << "client: send file information" << endl;
 
     if (receive_ACK()){
-        closesocket(server_sock); // 允许发送, 可以关闭先前的连接
+        closesocket(server_sock); // 接受发送, 可以关闭先前的连接
         for (int i = 0; i < file_info.thread_amount; ++i) {
             SOCKET sub_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
             Block_info block_info = { 0 };
             // 最后一个线程, 块大小不一定等于定义的块大小
             block_info.size = (i == (file_info.thread_amount - 1)) ? (file_info.file_size % block_size) : block_size;
             block_info.seek = block_size * i;
-
-            cout << "block " << i << " size: " << block_info.size << endl;
-
             sub_thread.emplace(sub_sock, thread(&Transmitter_client_TCP::send_block, this,
                                                 sub_sock, block_info, file_path));
         }
@@ -64,7 +55,8 @@ int Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char 
     }
     closesocket(server_sock);
     cout << "client: send complete" << endl;
-    return Status::complete;
+    state.store(enum_state::leisure); // 标识为空闲
+    return true;
 }
 
 
@@ -80,13 +72,11 @@ void Transmitter_client_TCP::send_block(SOCKET sub_sock, Block_info block_info, 
         printf("ERR client: sub_thread connect server %d\n", WSAGetLastError());
         return;
     }
-    printf("client: sub_thread connect server\n");
 
     if (send(sub_sock, reinterpret_cast<char*>(&block_info), sizeof(Block_info), 0) == SOCKET_ERROR){
         printf("ERR client: sub_thread send block info %d\n", WSAGetLastError());
         return;
     }
-    printf("client: sub_thread connect server\n");
 
     while (total_bytes < block_info.size) {
         send_size = std::min((block_info.size - total_bytes), static_cast<u_int64>(BUFFER_SIZE));
@@ -96,8 +86,6 @@ void Transmitter_client_TCP::send_block(SOCKET sub_sock, Block_info block_info, 
             printf("ERR client: sub_thread send block %d\n", WSAGetLastError());
             break;
         }
-        printf("client: sub_thread send block\n");
-
         total_bytes += bytes;
     }
 
@@ -107,6 +95,7 @@ void Transmitter_client_TCP::send_block(SOCKET sub_sock, Block_info block_info, 
 }
 
 void Transmitter_client_TCP::clear_member() {
+    state.store(enum_state::leisure);
     server_sock = INVALID_SOCKET;
     memset(&file_info, 0, sizeof (File_info));
     memset(&server_addr, 0, sizeof (sockaddr_in));
@@ -118,8 +107,7 @@ bool Transmitter_client_TCP::receive_ACK() {
     if (recv(server_sock, reinterpret_cast<char*>(&ack), sizeof (Ack), 0) == SOCKET_ERROR) {
         cerr << "client: receive Ack " << WSAGetLastError() << endl;
     }
-    cout << "client: received Ack" << endl;
-    return ack.code == Status::accept_req;
+    return ack.code == ACCEPT_REQUEST;
 }
 
 void Transmitter_client_TCP::send_request(){
@@ -140,9 +128,9 @@ const char *Transmitter_client_TCP::get_file_name(const char* file_path, const c
 }
 
 int Transmitter_client_TCP::get_thread_amount(){
-    if (file_info.file_size <= (1ULL << 28)) { // 文件大小 <= 256M
+    if (file_info.file_size <= (1ULL << 30)) { // 文件大小 <= 1G
         return 2;
-    } else if (file_info.file_size <= (1ULL << 31)) { // 文件大小 <= 2G
+    } else if (file_info.file_size <= (1ULL << 32)) { // 文件大小 <= 4G
         return 4;
     } else {
         return 8;
@@ -153,7 +141,6 @@ u_int64 Transmitter_client_TCP::get_file_size(const char* file_path) {
     ifstream ifs(file_path, ios::in | ios::binary);
     ifs.seekg(0, ios::end);
     u_int64 len = ifs.tellg();
-
     ifs.close();
     return len;
 }

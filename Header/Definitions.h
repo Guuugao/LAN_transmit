@@ -16,28 +16,16 @@ using std::ifstream;
 using std::ofstream;
 
 #define SERVER_PORT (9000)
-
 /* 数据包相关定义 */
 // 一个文件块的大小 -- 1M
-#define BUFFER_SIZE (1024 * 1024)
-
-// 记录状态的变量
-static volatile int status;
+#define BUFFER_SIZE (1 << 11)
 
 // 可能的状态
-enum Status{
+enum enum_state{
     leisure     = 0x00000000,   // 空闲
     sending     = 0x00000001,
     receiving   = 0x00000010,
-    complete    = 0x00000100,
-    error       = 0x00001000,
-    cancel      = 0x00010000,
-    accept_req  = 0x01000000,
-    refuse_req  = 0x00100000,
-    interrupt   = 0x10000000
 };
-
-#define FILE_PATH_LENGTH 64
 
 // 文件信息(文件名称, 文件大小)
 struct File_info{
@@ -51,6 +39,10 @@ struct Block_info{
     u_int64 seek; // 文件偏移量
     u_int64 size; // 数据块大小
 };
+
+
+#define ACCEPT_REQUEST 1
+#define REFUSE_REQUEST 0
 
 struct Ack{
     int code;

@@ -5,6 +5,7 @@
 #ifndef LAN_TRANSMIT_TRANSMITTER_CLIENT_TCP_H
 #define LAN_TRANSMIT_TRANSMITTER_CLIENT_TCP_H
 
+#include <atomic>
 #include <thread>
 #include <fstream>
 #include <iostream>
@@ -16,6 +17,9 @@
 
 class Transmitter_client_TCP{
 private:
+    // 客户端状态
+    std::atomic<enum_state> state;
+
     // 与服务器通信的socket
     SOCKET server_sock;
     // 服务器地址
@@ -35,7 +39,7 @@ public:
 
     // 开始发送
     // TODO 按照自己的意思改写一下: 不提供流, 提供文件路径, 函数自行提取文件名&文件流
-    int start_send_object(sockaddr_in server_ad, const char* file_path);
+    bool start_send_object(sockaddr_in server_ad, const char* file_path);
 
 private:
     // 清理上次发送相关数据
