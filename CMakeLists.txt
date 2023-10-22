@@ -6,6 +6,8 @@ link_libraries(ws2_32)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Build for Common Language Runtime.
+
 add_library(lan_transmit SHARED
         Header/Transmitter_server_TCP.h
         Header/Definitions.h
@@ -14,6 +16,10 @@ add_library(lan_transmit SHARED
         Resource/Transmitter_client_TCP.cpp
         Resource/Export.cpp
 )
+
+# set_target_properties(lan_transmit PROPERTIES COMMON_LANGUAGE_RUNTIME "")
+
+# Build for test
 
 add_library(lan_transmit_static_test
         Header/Transmitter_server_TCP.h

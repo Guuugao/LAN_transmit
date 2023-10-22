@@ -79,7 +79,13 @@ void Transmitter_client_TCP::send_block(SOCKET sub_sock, Block_info block_info, 
     }
 
     while (total_bytes < block_info.size) {
-        send_size = std::min((block_info.size - total_bytes), static_cast<u_int64>(BUFFER_SIZE));
+        u_int64 min1 = (block_info.size - total_bytes);
+        u_int64 min2 = static_cast<u_int64>(BUFFER_SIZE);
+        if (min1 > min2) send_size = min2;
+        else send_size = min1;
+
+        // todo: can not pass compiler in MSVC.
+        //send_size = std::min((block_info.size - total_bytes), static_cast<u_int64>(BUFFER_SIZE));
         ifs.read(buff, send_size).gcount();
         bytes = send(sub_sock, buff, send_size, 0);
         if (bytes == -1) {

@@ -12,12 +12,12 @@
 
 Transmitter_client_TCP* client_ptr;
 
-extern "C++" __declspec(dllexport) bool exist_client()
+extern "C" __declspec(dllexport) bool exist_client()
 {
     return client_ptr != nullptr;
 }
 
-extern "C++" __declspec(dllexport) bool create_client()
+extern "C" __declspec(dllexport) bool create_client()
 {
     if (client_ptr != nullptr) return false;
 
@@ -25,7 +25,7 @@ extern "C++" __declspec(dllexport) bool create_client()
     return true;
 }
 
-extern "C++" __declspec(dllexport) bool destroy_client()
+extern "C" __declspec(dllexport) bool destroy_client()
 {
     if (client_ptr == nullptr) return false;
 
@@ -34,19 +34,19 @@ extern "C++" __declspec(dllexport) bool destroy_client()
     return true;
 }
 
-extern "C++" __declspec(dllexport) bool client_is_sending()
+extern "C" __declspec(dllexport) bool client_is_sending()
 {
     if (client_ptr == nullptr) return false;
     return client_ptr->is_sending_object();
 }
 
-extern "C++" __declspec(dllexport) void client_interrupt_send()
+extern "C" __declspec(dllexport) void client_interrupt_send()
 {
     if (client_ptr == nullptr) return;
     client_ptr->end_send_object();
 }
 
-extern "C++" __declspec(dllexport) int client_start_send(
+extern "C" __declspec(dllexport) int client_start_send(
         const char* file_path,
         const u_short srv_port,
         const char* srv_address)
@@ -68,7 +68,7 @@ extern "C++" __declspec(dllexport) int client_start_send(
 
 Transmitter_server_TCP* server_ptr;
 
-extern "C++" __declspec(dllexport) bool exist_server()
+extern "C" __declspec(dllexport) bool exist_server()
 {
     return server_ptr != nullptr;
 }
@@ -84,7 +84,7 @@ void create_server_internal(const u_short port)
 }
 
 
-extern "C++" __declspec(dllexport) bool create_server(const u_short port)
+extern "C" __declspec(dllexport) bool create_server(const u_short port)
 {
     if (server_ptr != nullptr) return false;
 
@@ -92,7 +92,7 @@ extern "C++" __declspec(dllexport) bool create_server(const u_short port)
     return true;
 }
 
-extern "C++" __declspec(dllexport) bool destroy_server()
+extern "C" __declspec(dllexport) bool destroy_server()
 {
     if (server_ptr == nullptr) return false;
 
@@ -101,19 +101,19 @@ extern "C++" __declspec(dllexport) bool destroy_server()
     return true;
 }
 
-extern "C++" __declspec(dllexport) bool server_is_receiving()
+extern "C" __declspec(dllexport) bool server_is_receiving()
 {
     if (server_ptr == nullptr) return false;
     return server_ptr->is_receiving_object();
 }
 
-extern "C++" __declspec(dllexport) int server_start_receive(char* save_path)
+extern "C" __declspec(dllexport) int server_start_receive(char* save_path)
 {
     if (server_ptr == nullptr) return -1;
     return server_ptr->start_receive_object(save_path);
 }
 
-extern "C++" __declspec(dllexport) void server_interrupt_receive()
+extern "C" __declspec(dllexport) void server_interrupt_receive()
 {
     if (server_ptr == nullptr) return;
     server_ptr->end_receive_object();
