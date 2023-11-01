@@ -105,6 +105,7 @@ int Transmitter_client_TCP::send_block(block_info block_info) {
             close(sub_sock);
             if (state == enum_state::error) return 2;
             else if (state == enum_state::interrupt) return 4;
+            else return 5;
         }
 
         send_size = std::min(block_info.size - total_bytes, static_cast<long>(BUFFER_SIZE));

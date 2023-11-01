@@ -76,6 +76,7 @@ int Transmitter_server_TCP::receive_block(sockaddr_in &client_addr) {
     long total_bytes = 0;  // 记录已经接收到的文件字节数
     char buff[BUFFER_SIZE] = { 0 };
     block_info blk_info = { 0 };
+    // TODO 这里没有加锁不知道会不会有问题...
     socket_fd sub_sock = accept(server_sock, reinterpret_cast<sockaddr *>(&client_addr), &addr_len);
 
     if (sub_sock == INVALID_SOCKET) {
@@ -102,6 +103,7 @@ int Transmitter_server_TCP::receive_block(sockaddr_in &client_addr) {
             close(sub_sock);
             if (state == enum_state::error) return 2;
             else if (state == enum_state::interrupt) return 4;
+            else return 5;
         }
 
         bytes = recv(sub_sock, buff, BUFFER_SIZE, 0);

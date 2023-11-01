@@ -57,6 +57,7 @@ public:
      *  2 网络故障
      *  3 文件相关错误
      *  4 终止
+     *  5 未知错误
      * */
     void end_send_object();
 
