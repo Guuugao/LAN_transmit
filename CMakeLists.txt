@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(LAN_transmit)
 
-# 添加 windows socket 链接库
-link_libraries(ws2_32)
-
 set(CMAKE_CXX_STANDARD 17)
 
 # Build for Common Language Runtime.

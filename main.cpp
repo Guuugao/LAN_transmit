@@ -1,5 +1,4 @@
 #include <iostream>
-#include <sys/stat.h>
 #include "Transmitter_server_TCP.h"
 #include "Transmitter_client_TCP.h"
 
@@ -12,28 +11,25 @@
  * */
 
 using namespace std;
-// 关闭套接字和文件流原则: 在哪创建就在哪关闭
-
-#define TEST_FILE_PATH_BIG   "C:\\Users\\TIME LEAP MACHINE\\Downloads\\test_1.mp4"
 
 void startServer(){
     sockaddr_in server_addr = { 0 };
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    server_addr.sin_addr.S_un.S_addr = ADDR_ANY;
+    server_addr.sin_port = htons(9000);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
 
     Transmitter_server_TCP server(server_addr);
-    server.start_receive_object();
+    server.start_receive_object("/home/guuugao/code/cpp/LAN_transmit/test_file/");
 }
 
 void startClient(){
     sockaddr_in server_addr = { 0 };
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    server_addr.sin_addr.S_un.S_addr = inet_addr("192.168.137.1");
+    server_addr.sin_port = htons(9000);
+    server_addr.sin_addr.s_addr = inet_addr("172.30.51.195");
 
     Transmitter_client_TCP client;
-    client.start_send_object(server_addr, TEST_FILE_PATH_BIG);
+    client.start_send_object(server_addr, "/home/guuugao/code/cpp/LAN_transmit/hello.txt");
 }
 
 // TODO 考虑使用异常处理
@@ -41,29 +37,11 @@ void startClient(){
 // TODO 发送文件夹
 // TODO 添加日志
 int main() {
-    // 打开windows网络库
-    WSADATA winSockMsg;
-    if (WSAStartup(MAKEWORD(2, 2), &winSockMsg)) {
-        cerr << "open windows socket library fail: " << WSAGetLastError() << endl;
-        return -1;
-    }
-
-    // 检验版本
-    if (2 != HIBYTE(winSockMsg.wVersion) || 2 != LOBYTE(winSockMsg.wVersion)) {
-        cerr << "windows socket library version not exists: " << WSAGetLastError() << endl;
-        WSACleanup();
-        return -1;
-    }
-
-    thread thread_client(startClient);
     thread thread_server(startServer);
+    thread thread_client(startClient);
 
-    thread_client.detach();
-    thread_server.detach();
-
-    while(true){
-        this_thread::sleep_for(chrono::milliseconds(1000));
-    }
+    thread_client.join();
+    thread_server.join();
 
     return 0;
 }
