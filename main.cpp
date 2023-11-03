@@ -15,7 +15,7 @@ using namespace std;
 void startServer(){
     sockaddr_in server_addr = { 0 };
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(9000);
+    server_addr.sin_port = htons(20000);
     server_addr.sin_addr.s_addr = INADDR_ANY;
 
     Transmitter_server_TCP server(server_addr);
@@ -25,11 +25,11 @@ void startServer(){
 void startClient(){
     sockaddr_in server_addr = { 0 };
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(9000);
+    server_addr.sin_port = htons(20000);
     server_addr.sin_addr.s_addr = inet_addr("172.30.51.195");
 
     Transmitter_client_TCP client;
-    client.start_send_object(server_addr, "/home/guuugao/code/cpp/LAN_transmit/hello.txt");
+    client.start_send_object(server_addr, "/home/guuugao/code/cpp/LAN_transmit/1.mp4");
 }
 
 // TODO 考虑使用异常处理

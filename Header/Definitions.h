@@ -8,21 +8,9 @@ typedef int socket_fd;
 #define INVALID_SOCKET (-1)
 #define SOCKET_ERROR (-1)
 
-using std::ios;
-using std::ref;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::thread;
-using std::string;
-using std::istream;
-using std::ostream;
-using std::ifstream;
-using std::ofstream;
-
 /* 数据包相关定义 */
 // 一个文件块的大小 -- 1M
-#define BUFFER_SIZE (1 << 11)
+#define BUFFER_SIZE (1 << 19)
 
 // 可能的状态
 enum enum_state{

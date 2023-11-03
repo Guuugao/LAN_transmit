@@ -9,7 +9,7 @@ bool Transmitter_server_TCP::is_receiving_object() {
 }
 
 void Transmitter_server_TCP::end_receive_object() {
-    state = enum_state::interrupt;
+    if (state == enum_state::receiving) state = enum_state::interrupt;
 }
 
 int Transmitter_server_TCP::start_receive_object(const char *save_path) {
@@ -21,22 +21,25 @@ int Transmitter_server_TCP::start_receive_object(const char *save_path) {
     socket_fd client_sock = accept(server_sock, reinterpret_cast<sockaddr *>(&client_addr), &addr_len);
 
     if (recv(client_sock, reinterpret_cast<char *>(&req_info), sizeof(request_info), 0) <= 0) {
-        cerr << "server: receive file information" << endl;
+        std::cerr << "server: receive file information " << __FUNCTION__ << std::endl;
         return 2;
     }
 
-    printf("server: request info: %s %ld %d\n", req_info.file_name, req_info.file_size, req_info.thread_amount);
+    std::cout << "\033[32m" << "server: request info"
+              << " " << req_info.file_name
+              << " " << req_info.file_size
+              << " " << req_info.thread_amount << "\033[0m" << std::endl;
 
     // 拼接存储路径与文件名
-    char* save_path_copy = new char[strlen(save_path) + 128];
+    char *save_path_copy = new char[strlen(save_path) + 128];
     strcpy(save_path_copy, save_path);
     save_path_copy = strcat(save_path_copy, req_info.file_name);
 
     sub_thread.reserve(req_info.thread_amount);
-    ofs.open(save_path_copy, ios::out | ios::binary);
+    ofs.open(save_path_copy, std::ios::out | std::ios::binary);
     delete[] save_path_copy;
     if (!ofs.good()) {
-        cerr << "server: create file " << endl;
+        std::cerr << "server: create file " << __FUNCTION__ << std::endl;
         ofs.close();
         ofs.clear();
         close(client_sock);
@@ -44,7 +47,7 @@ int Transmitter_server_TCP::start_receive_object(const char *save_path) {
     }
 
     if (!send_ACK(client_sock)) {
-        cerr << "server: send ack" << endl;
+        std::cerr << "server: send ack " << __FUNCTION__ << std::endl;
         ofs.close();
         ofs.clear();
         close(client_sock);
@@ -53,53 +56,52 @@ int Transmitter_server_TCP::start_receive_object(const char *save_path) {
 
     close(client_sock);
     for (int i = 0; i < req_info.thread_amount; ++i) {
-        sub_thread.emplace_back(std::async(&Transmitter_server_TCP::receive_block, this, ref(client_addr)));
+        sub_thread.emplace_back(std::async(&Transmitter_server_TCP::receive_block,
+                                           this, std::ref(client_addr)));
     }
 
     int sub_thread_rtn = 0;
     for (auto &item: sub_thread) {
         int res = item.get();
         if (res != 0) sub_thread_rtn = res;
-
-        printf("server sub thread res: %d\n", res);
+        std::cout << "\033[32m" << "server: sub thread return " << res << "\033[0m" << std::endl;
     }
 
     ofs.close();
     ofs.clear();
-    cout << "server: receive complete" << endl;
+    if (sub_thread_rtn == 0) std::cout << "\033[32m" << "server: receive complete" << "\033[0m" << std::endl;
     state.store(enum_state::leisure);
     return sub_thread_rtn;
 }
 
 int Transmitter_server_TCP::receive_block(sockaddr_in &client_addr) {
-    long bytes = 0;            // 单次接收的字节数
-    long total_bytes = 0;  // 记录已经接收到的文件字节数
-    char buff[BUFFER_SIZE] = { 0 };
-    block_info blk_info = { 0 };
-    // TODO 这里没有加锁不知道会不会有问题...
+    block_info blk_info = {0};
     socket_fd sub_sock = accept(server_sock, reinterpret_cast<sockaddr *>(&client_addr), &addr_len);
 
     if (sub_sock == INVALID_SOCKET) {
-        printf("ERR server: sub_thread open socket\n");
+        fprintf(stderr, "server: sub_thread open socket %s\n", __FUNCTION__);
         state = enum_state::error;
         return 2;
     }
 
-    printf("server sub socket: %d\n", sub_sock);
-
     if (recv(sub_sock, reinterpret_cast<char *>(&blk_info), sizeof(block_info), 0) <= 0) {
-        printf("ERR server: sub_thread receive block info\n");
+        fprintf(stderr, "server: sub_thread %d receive block info %s\n", sub_sock, __FUNCTION__);
         state = enum_state::error;
         close(sub_sock);
         return 2;
     }
 
-    printf("server: block info: %ld %ld\n", blk_info.size, blk_info.seek);
+    printf("\033[32mserver: sub thread %d receive block info: %ld %ld\n\033[0m", sub_sock, blk_info.seek, blk_info.size
+    );
 
+    long bytes = 0;            // 单次接收的字节数
+    long total_bytes = 0;      // 记录已经接收到的文件字节数
+    char buff[BUFFER_SIZE] = {0};
     while (total_bytes < blk_info.size) {
-        std::lock_guard<std::mutex> lg_m_ofs(m_ofs); // 访问临界区
+        printf("\033[32mserver: status %d\n\033[0m", state.load());
 
-        if (state != enum_state::receiving){
+        if (state != enum_state::receiving) {
+            fprintf(stderr, "server: sub thread %d is not receiving\n", sub_sock);
             close(sub_sock);
             if (state == enum_state::error) return 2;
             else if (state == enum_state::interrupt) return 4;
@@ -108,17 +110,23 @@ int Transmitter_server_TCP::receive_block(sockaddr_in &client_addr) {
 
         bytes = recv(sub_sock, buff, BUFFER_SIZE, 0);
         if (bytes <= 0) {
-            printf("ERR server: sub_thread receive block\n");
+            fprintf(stderr, "server: sub_thread receive block %s\n", __FUNCTION__);
             state = enum_state::error;
             close(sub_sock);
             return 2;
         }
 
-        ofs.seekp(blk_info.seek + total_bytes); // 设置数据填充位置
-        ofs.write(buff, bytes);
-        total_bytes += bytes;
+        {
+            std::lock_guard<std::mutex> lg_ofs(m_ofs);
+            printf("\033[32mserver: sub socket %d lock\n\033[0m", sub_sock);
+            ofs.seekp(blk_info.seek + total_bytes); // 设置数据填充位置
+            ofs.write(buff, bytes);
+            total_bytes += bytes;
+            printf("\033[32mserver: sub_thread %d received %lu total %lu\n\033[0m", sub_sock, bytes, total_bytes);
+        }
+        printf("\033[32mserver: sub socket %d unlock\n\033[0m", sub_sock);
     }
-    printf("server: sub_thread receive block complete\n");
+    printf("\033[32mserver: sub_thread receive block complete\n\033[0m");
     close(sub_sock);
     return 0;
 }
@@ -126,8 +134,6 @@ int Transmitter_server_TCP::receive_block(sockaddr_in &client_addr) {
 void Transmitter_server_TCP::clear_member() {
     memset(&req_info, 0, sizeof(request_info));
     memset(&server_addr, 0, sizeof(sockaddr_in));
-    // 关于流 clear 与 close 调用顺序的讨论:
-    // https://bbs.csdn.net/topics/260042059
     sub_thread.clear();
     ofs.close();
     ofs.clear();
@@ -138,7 +144,7 @@ bool Transmitter_server_TCP::send_ACK(socket_fd client_sock) {
     ack.code = 1; // 先默认接受, 方便测试
     long bytes = send(client_sock, reinterpret_cast<char *>(&ack), sizeof(ack_info), 0);
     if (bytes <= 0) {
-        cerr << "server: send_object ack_info " << endl;
+        std::cerr << "server: send_object ack_info " << std::endl;
         return false;
     }
     return true;
@@ -152,7 +158,7 @@ Transmitter_server_TCP::Transmitter_server_TCP(sockaddr_in server_ad) {
 
     server_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (server_sock == INVALID_SOCKET) {
-        cerr << "server: open server socket fail" << endl;
+        std::cerr << "server: open server socket fail" << std::endl;
     }
 
     if (bind(server_sock, reinterpret_cast<sockaddr *>(&server_addr), sizeof(sockaddr)) == SOCKET_ERROR) {

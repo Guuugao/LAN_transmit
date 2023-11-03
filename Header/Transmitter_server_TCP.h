@@ -32,7 +32,7 @@ private:
     // 互斥访问ofs
     std::mutex m_ofs;
     // 写入文件流
-    ofstream ofs;
+    std::ofstream ofs;
 
     // 服务器监听socket
     socket_fd server_sock;
@@ -43,6 +43,7 @@ private:
     // 地址结构体长度
     socklen_t addr_len;
     // 接收线程
+//    std::vector<std::future<int>> sub_thread;
     std::vector<std::future<int>> sub_thread;
 
 

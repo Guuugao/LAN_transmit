@@ -41,6 +41,7 @@ private:
     // 文件信息包
     request_info req_info;
     // 发送线程&对应socket集合
+//    std::vector<std::future<int>> sub_thread;
     std::vector<std::future<int>> sub_thread;
 
 public:
@@ -81,7 +82,6 @@ private:
     // 提取文件名, 传入文件路径分隔符
     const char* get_file_name(const char* file_path, const char* separator);
     // 获取应开辟线程数量
-    // 可以设计个算法, 不过没啥头绪, 先写死吧
     int get_thread_amount();
     // 获取文件大小
     long get_file_size();
