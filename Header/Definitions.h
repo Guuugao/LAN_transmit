@@ -10,7 +10,7 @@ typedef int socket_fd;
 
 /* 数据包相关定义 */
 // 一个文件块的大小 -- 1M
-#define BUFFER_SIZE (1 << 19)
+#define BUFFER_SIZE (1 << 20)
 
 // 可能的状态
 enum enum_state{
@@ -34,8 +34,9 @@ struct block_info{
     long size; // 数据块大小
 };
 
-// 1: 接受
 // 0: 拒绝
+// 1: 接受
+// 2: 传输完成
 struct ack_info{
     int code;
 };

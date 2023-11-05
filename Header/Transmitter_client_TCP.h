@@ -19,6 +19,7 @@
 #include <unordered_map>
 
 #include <unistd.h>
+#include <signal.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,11 +28,10 @@
 
 class Transmitter_client_TCP{
 private:
-    // 客户端状态
+    // client status
     volatile std::atomic<enum_state> state;
-    // 文件流互斥锁
+    // input file stream lock
     std::mutex m_ifs;
-    // 读取文件的流
     std::ifstream ifs;
 
     // 与服务器通信的socket
@@ -40,18 +40,21 @@ private:
     sockaddr_in server_addr;
     // 文件信息包
     request_info req_info;
-    // 发送线程&对应socket集合
-//    std::vector<std::future<int>> sub_thread;
+    // 发送线程集合
     std::vector<std::future<int>> sub_thread;
 
+    std::promise<int> pms_client;
 public:
     Transmitter_client_TCP();
+    ~Transmitter_client_TCP();
 
     // 检测是否正在发送
     bool is_sending_object();
     // 终止发送
+    void end_send_object();
+
     /*
-     * 功能: 开始发送
+     * 功能: 发送文件前置工作
      * 返回值:
      *  0 一切正常
      *  1 发送中, 请等待一段时间尝试
@@ -60,19 +63,28 @@ public:
      *  4 终止
      *  5 未知错误
      * */
-    void end_send_object();
-
-    int start_send_object(sockaddr_in server_ad, const char* file_path);
+    // TODO 这样就不会阻塞了!
+    std::future<int> start_send_object(sockaddr_in server_ad, const char* file_path);
 
 private:
-    // 清理上次发送相关数据
-    void clear_member();
+    // 发送文件
+    void do_send();
 
     /*
-    * 功能: 接收ACK, 返回接收方是否同意
-    * 返回值: 该操作是否成功
+    * 功能: 发送数据块
+    * 返回值: 同 start_send_object
     * */
-    bool receive_ACK();
+    int send_block(block_info blk_info);
+    // 清理上次发送相关数据
+    void clear_member();
+    /*
+    * 功能: 接收ACK, 返回接收方是否同意
+    * 返回值: -1 网络错误
+    *         0 拒绝请求
+     *        1 接受请求
+     *        2 传输完毕
+    * */
+    int receive_ACK(socket_fd fd);
     /*
     * 功能: 发送请求
     * 返回值: 该操作是否成功
@@ -85,11 +97,6 @@ private:
     int get_thread_amount();
     // 获取文件大小
     long get_file_size();
-    /*
-    * 功能: 发送数据块
-    * 返回值: 同 start_send_object
-    * */
-    int send_block(block_info block_info);
 };
 
 #endif //LAN_TRANSMIT_TRANSMITTER_CLIENT_TCP_H
