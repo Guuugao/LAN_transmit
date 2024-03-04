@@ -46,6 +46,13 @@ bool Transmitter_client_TCP::start_send_object(sockaddr_in server_ad, const char
             // 最后一个线程, 块大小不一定等于定义的块大小
             block_info.size = (i == (file_info.thread_amount - 1)) ? (file_info.file_size % block_size) : block_size;
             block_info.seek = block_size * i;
+
+            printf("client send block info: "
+                   "thread id: %d\n"
+                   "block size: %llu\n"
+                   "block seek: %llu\n\n"
+                   , std::this_thread::get_id(), block_info.size, block_info.seek);
+
             sub_thread.emplace(sub_sock, thread(&Transmitter_client_TCP::send_block, this,
                                                 sub_sock, block_info, file_path));
         }
@@ -113,12 +120,21 @@ bool Transmitter_client_TCP::receive_ACK() {
     if (recv(server_sock, reinterpret_cast<char*>(&ack), sizeof (Ack), 0) == SOCKET_ERROR) {
         cerr << "client: receive Ack " << WSAGetLastError() << endl;
     }
+
+    printf("client receive ack: %d\n\n", ack.code);
+
     return ack.code == ACCEPT_REQUEST;
 }
 
 void Transmitter_client_TCP::send_request(){
     // TODO 发送失败处理
     send(server_sock, reinterpret_cast<char*>(&file_info),sizeof (File_info), 0);
+
+    printf("client send request: \n"
+           "file name: %s\n"
+           "file size: %llu\n"
+           "thread amount: %d\n\n",
+           file_info.file_name, file_info.file_size, file_info.thread_amount);
 }
 
 const char *Transmitter_client_TCP::get_file_name(const char* file_path, const char* separator) {
@@ -143,6 +159,7 @@ int Transmitter_client_TCP::get_thread_amount(){
     }
 }
 
+// TODO 改为使用分块传输, 全程只打开一个文件流
 u_int64 Transmitter_client_TCP::get_file_size(const char* file_path) {
     ifstream ifs(file_path, ios::in | ios::binary);
     ifs.seekg(0, ios::end);

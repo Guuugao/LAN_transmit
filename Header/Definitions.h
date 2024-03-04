@@ -3,6 +3,8 @@
 //
 #pragma once
 
+// some common definitions
+
 using std::ios;
 using std::ref;
 using std::cout;
@@ -16,28 +18,26 @@ using std::ifstream;
 using std::ofstream;
 
 #define SERVER_PORT (9000)
-/* 数据包相关定义 */
-// 一个文件块的大小 -- 1M
-#define BUFFER_SIZE (1 << 11)
+#define BUFFER_SIZE (1 << 11)// 1M
 
-// 可能的状态
+// possible state
 enum enum_state{
-    leisure     = 0x00000000,   // 空闲
+    leisure     = 0x00000000,
     sending     = 0x00000001,
     receiving   = 0x00000010,
 };
 
-// 文件信息(文件名称, 文件大小)
+// file information struct
 struct File_info{
-    const char* file_name;   // 文件名称
-    u_int64 file_size;  // 文件大小
-    u_int thread_amount;// 计划使用线程数量
+    const char* file_name;
+    u_int64 file_size;
+    u_int thread_amount;     // number of planned threads
 };
 
-// 文件数据块信息
+// file data block struct
 struct Block_info{
-    u_int64 seek; // 文件偏移量
-    u_int64 size; // 数据块大小
+    u_int64 seek; // file data block offset
+    u_int64 size; // file data block size
 };
 
 

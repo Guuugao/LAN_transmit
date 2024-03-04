@@ -14,16 +14,17 @@
 using namespace std;
 // 关闭套接字和文件流原则: 在哪创建就在哪关闭
 
-#define TEST_FILE_PATH_BIG   "C:\\Users\\TIME LEAP MACHINE\\Downloads\\test_1.mp4"
-
 void startServer(){
+    char save_path[] = "../";
+    
     sockaddr_in server_addr = { 0 };
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
     server_addr.sin_addr.S_un.S_addr = ADDR_ANY;
 
     Transmitter_server_TCP server(server_addr);
-    server.start_receive_object();
+    server.start_receive_object(save_path);
+    server.start_receive_object(save_path);
 }
 
 void startClient(){
@@ -33,10 +34,10 @@ void startClient(){
     server_addr.sin_addr.S_un.S_addr = inet_addr("192.168.137.1");
 
     Transmitter_client_TCP client;
-    client.start_send_object(server_addr, TEST_FILE_PATH_BIG);
+    client.start_send_object(server_addr, R"(C:\Users\TIME LEAP MACHINE\Downloads\64981847_p0.jpg)");
 }
 
-// TODO 考虑使用异常处理
+// TODO 异常处理
 // TODO 断点重传
 // TODO 发送文件夹
 // TODO 添加日志

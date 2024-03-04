@@ -24,10 +24,17 @@ bool Transmitter_server_TCP::start_receive_object(char* save_path) {
         cerr << "server: receive file information  " << WSAGetLastError() << endl;
         return false;
     }
+
+    printf("server receive request: \n"
+           "file name: %s\n"
+           "file size: %llu\n"
+           "thread amount: %d\n\n",
+           file_info.file_name, file_info.file_size, file_info.thread_amount);
+
     // 拼接存储路径与文件名
     const char* file_path = strcat(save_path, file_info.file_name);
     sub_thread.reserve(file_info.thread_amount);
-    ofs.open(file_path, ios::binary | ios::out | ios::trunc);
+    ofs.open(file_path, ios::binary | ios::out);
     if (!ofs.is_open()) {
         cerr << "server: create file " << endl;
         return false;
@@ -63,6 +70,12 @@ void Transmitter_server_TCP::receive_block(SOCKET sub_sock) {
         return;
     }
 
+    printf("server receive block info: "
+           "thread id: %d\n"
+           "block size: %llu\n"
+           "block seek: %llu\n\n"
+            , std::this_thread::get_id(), block_info.size, block_info.seek);
+
     while (total_bytes < block_info.size) {
         bytes = recv(sub_sock, buff, BUFFER_SIZE, 0);
         if (bytes == -1) {
@@ -97,6 +110,8 @@ void Transmitter_server_TCP::send_ACK(SOCKET client_sock) {
     if (bytes == -1) {
         cerr << "server: send Ack " << WSAGetLastError() << endl;
     }
+
+    printf("server send ack: %d\n\n", ack.code);
 }
 
 // TODO 错误处理
